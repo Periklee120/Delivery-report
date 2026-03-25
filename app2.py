@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from io import BytesIO
+from datetime import datetime
 
 st.set_page_config(page_title="Delivery Planning Tool", layout="wide")
 
@@ -111,7 +112,7 @@ if uploaded_files:
         .reset_index(drop=True)
     )
 
-    # Δημιουργία πίνακα για εκτύπωση σε 4 στήλες
+    # Δημιουργία πίνακα 4 στηλών για εκτύπωση
     rows = []
     half = (len(postal_summary) + 1) // 2
 
@@ -206,10 +207,14 @@ if uploaded_files:
 
     excel_data = output.getvalue()
 
+    # 👉 ΗΜΕΡΟΜΗΝΙΑ ΣΤΟ ΟΝΟΜΑ
+    today = datetime.now().strftime("%d-%m-%Y")
+    filename = f"delivery_report_{today}.xlsx"
+
     st.download_button(
         label="📥 Κατέβασε Excel Report",
         data=excel_data,
-        file_name="delivery_report.xlsx",
+        file_name=filename,
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
 
