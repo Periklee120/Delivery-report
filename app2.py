@@ -37,7 +37,7 @@ if uploaded_files:
     st.success(f"Φορτώθηκαν {len(uploaded_files)} αρχεία")
     st.info(f"Συνολικές γραμμές αποστολών: {df.shape[0]}")
 
-    required_columns = ["CneeAdd1", "Cnee", "PostalCd"]
+    required_columns = ["CneeAdd1", "Cnee", "PostalCd", "ShptWt"]
 
     for col in required_columns:
         if col not in df.columns:
@@ -60,6 +60,8 @@ if uploaded_files:
         lambda x: x if x.startswith("5") else "Διάφοροι"
     )
 
+    df["ShptWt"] = pd.to_numeric(df["ShptWt"], errors="coerce").fillna(0)
+
     # Unique stops
     unique_stops = df.drop_duplicates(subset=["CneeAdd1"]).copy()
 
@@ -80,21 +82,26 @@ if uploaded_files:
         .sort_values(by="Σύνολο Αποστολών", ascending=False)
     )
 
-    st.dataframe(address_counts, use_container_width=True)
+    st.dataframe(address_counts, width="stretch")
 
     # Group Deliveries >=5
     st.header("🚚 Ομαδικές Παραδόσεις (>=5 ίδια διεύθυνση & παραλήπτης)")
 
     grouped = (
         df.groupby(["Cnee", "CneeAdd1", "Postal_Group"])
-        .size()
-        .reset_index(name="Ποσότητα")
+        .agg(
+            Ποσότητα=("CneeAdd1","size"),
+            Συνολικά_Κιλά=("ShptWt","sum")
+        )
+        .reset_index()
     )
 
-    over5 = grouped[grouped["Ποσότητα"] >= 5] \
-        .sort_values(by="Ποσότητα", ascending=False)
+    grouped["Συνολικά_Κιλά"]=grouped["Συνολικά_Κιλά"].round(2)
 
-    st.dataframe(over5, use_container_width=True)
+    over5 = grouped[grouped["Ποσότητα"] >= 5] \
+        .sort_values(by=["Ποσότητα","Συνολικά_Κιλά"], ascending=False)
+
+    st.dataframe(over5, width="stretch")
 
     st.info(f"Σύνολο ομαδικών παραδόσεων: {over5.shape[0]}")
 
@@ -134,7 +141,7 @@ if uploaded_files:
         columns=["Postal Group", "Στάσεις", "Postal Group ", "Στάσεις "]
     )
 
-    st.dataframe(print_table, use_container_width=True)
+    st.dataframe(print_table, width="stretch")
 
     # =====================================
     # Postal Code Filter
@@ -163,14 +170,14 @@ if uploaded_files:
         )
 
         st.subheader("📮 Σύνολο Στάσεων ανά ΤΚ")
-        st.dataframe(tk_summary, use_container_width=True)
+        st.dataframe(tk_summary, width="stretch")
 
         st.info(f"Συνολικές στάσεις επιλογής: {filtered.shape[0]}")
 
         with st.expander("📋 Δες τις διευθύνσεις"):
             st.dataframe(
                 filtered[["Postal_Group", "Cnee", "CneeAdd1"]],
-                use_container_width=True
+                width="stretch"
             )
 
     # =====================================
