@@ -275,7 +275,7 @@ if uploaded_files:
     st.header("🚚 Ομαδικές Παραδόσεις (>=5 ίδια διεύθυνση & παραλήπτης)")
 
     grouped = (
-        df.groupby(["Cnee", "CneeAdd1", "Postal_Group"])
+        df.groupby(["Cnee", "CneeAdd1", "PostalCd"])
         .agg(
             Ποσότητα=("CneeAdd1","size"),
             Συνολικά_Κιλά=("ShptWt","sum")
@@ -303,13 +303,13 @@ if uploaded_files:
 
     postal_summary = (
         unique_stops
-        .groupby("Postal_Group")
+        .groupby("PostalCd")
         .size()
         .reset_index(
             name="Στάσεις"
         )
         .sort_values(
-            by="Postal_Group"
+            by="PostalCd"
         )
         .reset_index(
             drop=True
