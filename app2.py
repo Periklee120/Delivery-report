@@ -272,60 +272,25 @@ if uploaded_files:
     # GROUP DELIVERIES >= 5
     # ========================================================
 
-    st.header(
-        "🚚 Ομαδικές Παραδόσεις "
-        "(>=5 ίδια διεύθυνση & παραλήπτης)"
-    )
+    st.header("🚚 Ομαδικές Παραδόσεις (>=5 ίδια διεύθυνση & παραλήπτης)")
 
     grouped = (
-        df
-        .groupby(
-            [
-                "Cnee",
-                "CneeAdd1",
-                "Postal_Group"
-            ]
-        )
+        df.groupby(["Cnee", "CneeAdd1", "Postal_Group"])
         .agg(
-            Ποσότητα=(
-                "CneeAdd1",
-                "size"
-            ),
-            Συνολικά_Κιλά=(
-                "ShptWt",
-                "sum"
-            )
+            Ποσότητα=("CneeAdd1","size"),
+            Συνολικά_Κιλά=("ShptWt","sum")
         )
         .reset_index()
     )
 
-    grouped["Συνολικά_Κιλά"] = (
-        grouped["Συνολικά_Κιλά"]
-        .round(2)
-    )
+    grouped["Συνολικά_Κιλά"]=grouped["Συνολικά_Κιλά"].round(2)
 
-    over5 = (
-        grouped[
-            grouped["Ποσότητα"] >= 5
-        ]
-        .sort_values(
-            by=[
-                "Ποσότητα",
-                "Συνολικά_Κιλά"
-            ],
-            ascending=False
-        )
-    )
+    over5 = grouped[grouped["Ποσότητα"] >= 5] \
+        .sort_values(by=["Ποσότητα","Συνολικά_Κιλά"], ascending=False)
 
-    st.dataframe(
-        over5,
-        use_container_width=True
-    )
+    st.dataframe(over5, width="stretch")
 
-    st.info(
-        f"Σύνολο ομαδικών παραδόσεων: "
-        f"{over5.shape[0]}"
-    )
+    st.info(f"Σύνολο ομαδικών παραδόσεων: {over5.shape[0]}")
 
 
     # ========================================================
