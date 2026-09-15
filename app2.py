@@ -193,7 +193,7 @@ if uploaded_files:
     # POSTAL GROUP
     # ========================================================
 
-    df["PostalCd"] = df["PostalCd"].apply(
+    df["Postal_Group"] = df["PostalCd"].apply(
         lambda x:
             x if x.startswith("5")
             else "Διάφοροι"
@@ -272,25 +272,60 @@ if uploaded_files:
     # GROUP DELIVERIES >= 5
     # ========================================================
 
-    st.header("🚚 Ομαδικές Παραδόσεις (>=5 ίδια διεύθυνση & παραλήπτης)")
+    st.header(
+        "🚚 Ομαδικές Παραδόσεις "
+        "(>=5 ίδια διεύθυνση & παραλήπτης)"
+    )
 
     grouped = (
-        df.groupby(["Cnee", "CneeAdd1", "PostalCd"])
+        df
+        .groupby(
+            [
+                "Cnee",
+                "CneeAdd1",
+                "Postal_Group"
+            ]
+        )
         .agg(
-            Ποσότητα=("CneeAdd1","size"),
-            Συνολικά_Κιλά=("ShptWt","sum")
+            Ποσότητα=(
+                "CneeAdd1",
+                "size"
+            ),
+            Συνολικά_Κιλά=(
+                "ShptWt",
+                "sum"
+            )
         )
         .reset_index()
     )
 
-    grouped["Συνολικά_Κιλά"]=grouped["Συνολικά_Κιλά"].round(2)
+    grouped["Συνολικά_Κιλά"] = (
+        grouped["Συνολικά_Κιλά"]
+        .round(2)
+    )
 
-    over5 = grouped[grouped["Ποσότητα"] >= 5] \
-        .sort_values(by=["Ποσότητα","Συνολικά_Κιλά"], ascending=False)
+    over5 = (
+        grouped[
+            grouped["Ποσότητα"] >= 5
+        ]
+        .sort_values(
+            by=[
+                "Ποσότητα",
+                "Συνολικά_Κιλά"
+            ],
+            ascending=False
+        )
+    )
 
-    st.dataframe(over5, width="stretch")
+    st.dataframe(
+        over5,
+        use_container_width=True
+    )
 
-    st.info(f"Σύνολο ομαδικών παραδόσεων: {over5.shape[0]}")
+    st.info(
+        f"Σύνολο ομαδικών παραδόσεων: "
+        f"{over5.shape[0]}"
+    )
 
 
     # ========================================================
@@ -303,13 +338,13 @@ if uploaded_files:
 
     postal_summary = (
         unique_stops
-        .groupby("PostalCd")
+        .groupby("Postal_Group")
         .size()
         .reset_index(
             name="Στάσεις"
         )
         .sort_values(
-            by="PostalCd"
+            by="Postal_Group"
         )
         .reset_index(
             drop=True
@@ -330,7 +365,7 @@ if uploaded_files:
     for i in range(half):
 
         left_postal = (
-            postal_summary.iloc[i]["PostalCd"]
+            postal_summary.iloc[i]["Postal_Group"]
         )
 
         left_stops = (
@@ -342,7 +377,7 @@ if uploaded_files:
             right_postal = (
                 postal_summary.iloc[
                     i + half
-                ]["PostalCd"]
+                ]["Postal_Group"]
             )
 
             right_stops = (
@@ -391,7 +426,7 @@ if uploaded_files:
     )
 
     postal_options = sorted(
-        postal_summary["PostalCd"]
+        postal_summary["Postal_Group"]
     )
 
     selected_codes = st.multiselect(
@@ -404,20 +439,20 @@ if uploaded_files:
 
         filtered = unique_stops[
             unique_stops[
-                "PostalCd"
+                "Postal_Group"
             ].isin(selected_codes)
         ]
 
 
         tk_summary = (
             filtered
-            .groupby("PostalCd")
+            .groupby("Postal_Group")
             .size()
             .reset_index(
                 name="Σύνολο Στάσεων"
             )
             .sort_values(
-                by="PostalCd"
+                by="Postal_Group"
             )
         )
 
@@ -445,7 +480,7 @@ if uploaded_files:
             st.dataframe(
                 filtered[
                     [
-                        "PostalCd",
+                        "Postal_Group",
                         "Cnee",
                         "CneeAdd1"
                     ]
@@ -594,7 +629,7 @@ if uploaded_files:
 
 
     unique_stops["Route"] = (
-        unique_stops["PostalCd"]
+        unique_stops["Postal_Group"]
         .map(route_map)
         .fillna("ΛΟΙΠΑ")
     )
