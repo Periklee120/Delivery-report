@@ -409,4 +409,3 @@ if uploaded_files:
     
     buffer = BytesIO()
     with pd.ExcelWriter(buffer, engine="xlsxwriter") as writer:
-        
