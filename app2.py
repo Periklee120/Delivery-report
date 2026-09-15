@@ -193,7 +193,7 @@ if uploaded_files:
     # POSTAL GROUP
     # ========================================================
 
-    df["Postal_Group"] = df["PostalCd"].apply(
+    df["PostalCd"] = df["PostalCd"].apply(
         lambda x:
             x if x.startswith("5")
             else "Διάφοροι"
@@ -330,7 +330,7 @@ if uploaded_files:
     for i in range(half):
 
         left_postal = (
-            postal_summary.iloc[i]["Postal_Group"]
+            postal_summary.iloc[i]["PostalCd"]
         )
 
         left_stops = (
@@ -342,7 +342,7 @@ if uploaded_files:
             right_postal = (
                 postal_summary.iloc[
                     i + half
-                ]["Postal_Group"]
+                ]["PostalCd"]
             )
 
             right_stops = (
@@ -391,7 +391,7 @@ if uploaded_files:
     )
 
     postal_options = sorted(
-        postal_summary["Postal_Group"]
+        postal_summary["PostalCd"]
     )
 
     selected_codes = st.multiselect(
@@ -404,20 +404,20 @@ if uploaded_files:
 
         filtered = unique_stops[
             unique_stops[
-                "Postal_Group"
+                "PostalCd"
             ].isin(selected_codes)
         ]
 
 
         tk_summary = (
             filtered
-            .groupby("Postal_Group")
+            .groupby("PostalCd")
             .size()
             .reset_index(
                 name="Σύνολο Στάσεων"
             )
             .sort_values(
-                by="Postal_Group"
+                by="PostalCd"
             )
         )
 
@@ -445,7 +445,7 @@ if uploaded_files:
             st.dataframe(
                 filtered[
                     [
-                        "Postal_Group",
+                        "PostalCd",
                         "Cnee",
                         "CneeAdd1"
                     ]
@@ -594,7 +594,7 @@ if uploaded_files:
 
 
     unique_stops["Route"] = (
-        unique_stops["Postal_Group"]
+        unique_stops["PostalCd"]
         .map(route_map)
         .fillna("ΛΟΙΠΑ")
     )
