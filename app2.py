@@ -3,18 +3,12 @@ import pandas as pd
 from io import BytesIO
 from datetime import datetime
 
-
-# ============================================================
-# PAGE CONFIGURATION
-# ============================================================
-
 st.set_page_config(
     page_title="Delivery Planning Tool",
     layout="wide"
 )
 
 st.title("📦 Delivery Report & Planning Tool")
-
 
 # ============================================================
 # PRINT STYLING
@@ -32,7 +26,7 @@ st.markdown("""
 
 
 # ============================================================
-# FILE UPLOADER
+# UPLOAD EXCEL FILES
 # ============================================================
 
 uploaded_files = st.file_uploader(
@@ -50,10 +44,6 @@ if uploaded_files:
 
     df_list = []
 
-    # --------------------------------------------------------
-    # Απαραίτητες στήλες
-    # --------------------------------------------------------
-
     required_columns = [
         "CneeAdd1",
         "Cnee",
@@ -61,51 +51,39 @@ if uploaded_files:
         "ShptWt"
     ]
 
-    # --------------------------------------------------------
-    # Μετρητές tabs
-    # --------------------------------------------------------
-
+    # Μετρητές για ενημέρωση χρήστη
     total_sheets = 0
     accepted_sheets = 0
     ignored_sheets = []
 
     # ========================================================
-    # READ ALL FILES + ALL TABS
+    # READ ALL EXCEL FILES + ALL TABS
     # ========================================================
 
     for file in uploaded_files:
 
         try:
-
             # Διαβάζει ΟΛΑ τα tabs του Excel
             excel_sheets = pd.read_excel(
                 file,
                 sheet_name=None
             )
 
-            # ------------------------------------------------
-            # Επεξεργασία κάθε tab
-            # ------------------------------------------------
-
             for sheet_name, temp_df in excel_sheets.items():
 
                 total_sheets += 1
 
-                # --------------------------------------------
-                # Έλεγχος απαραίτητων στηλών
-                # --------------------------------------------
-
+                # Έλεγχος αν το συγκεκριμένο tab έχει
+                # όλες τις απαραίτητες στήλες
                 if all(
                     col in temp_df.columns
                     for col in required_columns
                 ):
 
                     df_list.append(temp_df)
-
                     accepted_sheets += 1
 
                 else:
-
                     ignored_sheets.append(
                         f"{file.name} → {sheet_name}"
                     )
@@ -113,13 +91,12 @@ if uploaded_files:
         except Exception as e:
 
             st.error(
-                f"❌ Πρόβλημα κατά την ανάγνωση του "
-                f"αρχείου '{file.name}': {e}"
+                f"❌ Πρόβλημα κατά την ανάγνωση του αρχείου "
+                f"'{file.name}': {e}"
             )
 
-
     # ========================================================
-    # CHECK VALID SHEETS
+    # CHECK IF ANY VALID SHEETS WERE FOUND
     # ========================================================
 
     if not df_list:
@@ -134,21 +111,16 @@ if uploaded_files:
 
         if ignored_sheets:
 
-            st.warning(
-                "Τα tabs που αγνοήθηκαν:"
-            )
+            st.warning("Τα tabs που αγνοήθηκαν:")
 
             for sheet in ignored_sheets:
-
-                st.write(
-                    f"• {sheet}"
-                )
+                st.write(f"• {sheet}")
 
         st.stop()
 
 
     # ========================================================
-    # COMBINE ALL VALID TABS
+    # COMBINE ALL VALID SHEETS
     # ========================================================
 
     df = pd.concat(
@@ -158,7 +130,7 @@ if uploaded_files:
 
 
     # ========================================================
-    # FILE / TAB SUMMARY
+    # UPLOAD SUMMARY
     # ========================================================
 
     st.success(
@@ -177,15 +149,11 @@ if uploaded_files:
         ):
 
             for sheet in ignored_sheets:
-
-                st.write(
-                    f"• {sheet}"
-                )
+                st.write(f"• {sheet}")
 
 
     st.info(
-        f"📦 Συνολικές γραμμές αποστολών: "
-        f"{df.shape[0]}"
+        f"📦 Συνολικές γραμμές αποστολών: {df.shape[0]}"
     )
 
 
@@ -193,30 +161,12 @@ if uploaded_files:
     # CLEANING
     # ========================================================
 
-    # Αφαιρούμε γραμμές χωρίς διεύθυνση
     df = df.dropna(
         subset=["CneeAdd1"]
-    ).copy()
-
-
-    # --------------------------------------------------------
-    # Address
-    # --------------------------------------------------------
+    )
 
     df["CneeAdd1"] = (
         df["CneeAdd1"]
-        .astype(str)
-        .str.strip()
-    )
-
-
-    # --------------------------------------------------------
-    # Recipient
-    # --------------------------------------------------------
-
-    df["Cnee"] = (
-        df["Cnee"]
-        .fillna("")
         .astype(str)
         .str.strip()
     )
@@ -263,34 +213,11 @@ if uploaded_files:
     # ========================================================
     # UNIQUE STOPS
     # ========================================================
-    #
-    # ΣΗΜΑΝΤΙΚΟ:
-    #
-    # Η στάση πλέον καθορίζεται από:
-    #
-    #       CneeAdd1 + Cnee
-    #
-    # Δηλαδή:
-    #
-    # Ίδια διεύθυνση + ίδιος παραλήπτης
-    #       = 1 στάση
-    #
-    # Ίδια διεύθυνση + διαφορετικός παραλήπτης
-    #       = διαφορετικές στάσεις
-    #
-    # Το BulkLookup ΔΕΝ χρησιμοποιείται εδώ για να αυξήσει
-    # τις στάσεις, γιατί διαφορετικά δέματα προς τον ίδιο
-    # παραλήπτη και την ίδια διεύθυνση παραμένουν μία στάση.
-    #
-    # ========================================================
 
     unique_stops = (
         df
         .drop_duplicates(
-            subset=[
-                "CneeAdd1",
-                "Cnee"
-            ]
+            subset=["CneeAdd1"]
         )
         .copy()
     )
@@ -324,8 +251,7 @@ if uploaded_files:
     )
 
     address_counts = (
-        df
-        .groupby("CneeAdd1")
+        df.groupby("CneeAdd1")
         .size()
         .reset_index(
             name="Σύνολο Αποστολών"
@@ -373,12 +299,10 @@ if uploaded_files:
         .reset_index()
     )
 
-
     grouped["Συνολικά_Κιλά"] = (
         grouped["Συνολικά_Κιλά"]
         .round(2)
     )
-
 
     over5 = (
         grouped[
@@ -393,12 +317,10 @@ if uploaded_files:
         )
     )
 
-
     st.dataframe(
         over5,
         use_container_width=True
     )
-
 
     st.info(
         f"Σύνολο ομαδικών παραδόσεων: "
@@ -413,7 +335,6 @@ if uploaded_files:
     st.header(
         "📮 Στάσεις ανά Ταχυδρομικό Κώδικα"
     )
-
 
     postal_summary = (
         unique_stops
@@ -441,53 +362,34 @@ if uploaded_files:
         len(postal_summary) + 1
     ) // 2
 
-
     for i in range(half):
 
-        # --------------------------------------------
-        # Αριστερή πλευρά
-        # --------------------------------------------
-
         left_postal = (
-            postal_summary.iloc[i][
-                "Postal_Group"
-            ]
+            postal_summary.iloc[i]["Postal_Group"]
         )
 
         left_stops = (
-            postal_summary.iloc[i][
-                "Στάσεις"
-            ]
+            postal_summary.iloc[i]["Στάσεις"]
         )
-
-
-        # --------------------------------------------
-        # Δεξιά πλευρά
-        # --------------------------------------------
 
         if i + half < len(postal_summary):
 
             right_postal = (
                 postal_summary.iloc[
                     i + half
-                ][
-                    "Postal_Group"
-                ]
+                ]["Postal_Group"]
             )
 
             right_stops = (
                 postal_summary.iloc[
                     i + half
-                ][
-                    "Στάσεις"
-                ]
+                ]["Στάσεις"]
             )
 
         else:
 
             right_postal = ""
             right_stops = ""
-
 
         rows.append(
             [
@@ -509,7 +411,6 @@ if uploaded_files:
         ]
     )
 
-
     st.dataframe(
         print_table,
         use_container_width=True
@@ -524,13 +425,9 @@ if uploaded_files:
         "🔎 Επιλογή Ταχυδρομικών Κωδικών"
     )
 
-
     postal_options = sorted(
-        postal_summary[
-            "Postal_Group"
-        ]
+        postal_summary["Postal_Group"]
     )
-
 
     selected_codes = st.multiselect(
         "Επίλεξε έναν ή περισσότερους ΤΚ",
@@ -546,10 +443,6 @@ if uploaded_files:
             ].isin(selected_codes)
         ]
 
-
-        # --------------------------------------------
-        # TK SUMMARY
-        # --------------------------------------------
 
         tk_summary = (
             filtered
@@ -568,7 +461,6 @@ if uploaded_files:
             "📮 Σύνολο Στάσεων ανά ΤΚ"
         )
 
-
         st.dataframe(
             tk_summary,
             use_container_width=True
@@ -580,10 +472,6 @@ if uploaded_files:
             f"{filtered.shape[0]}"
         )
 
-
-        # --------------------------------------------
-        # ADDRESS LIST
-        # --------------------------------------------
 
         with st.expander(
             "📋 Δες τις διευθύνσεις"
@@ -602,7 +490,7 @@ if uploaded_files:
 
 
     # ========================================================
-    # ROUTE MAP
+    # ROUTES
     # ========================================================
 
     route_map = {}
@@ -611,15 +499,8 @@ if uploaded_files:
     def add(route_name, codes):
 
         for code in codes:
+            route_map[str(code)] = route_name
 
-            route_map[
-                str(code)
-            ] = route_name
-
-
-    # --------------------------------------------------------
-    # ROUTE 1
-    # --------------------------------------------------------
 
     add(
         "ΚΑΛΑΜΑΡΙΑ, ΝΤΕΠΩ, ΧΑΡΙΛΑΟΥ, ΑΝΑΛΗΨΗ, ΤΟΥΜΠΑ",
@@ -650,10 +531,6 @@ if uploaded_files:
     )
 
 
-    # --------------------------------------------------------
-    # ROUTE 2
-    # --------------------------------------------------------
-
     add(
         "ΚΕΝΤΡΟ, ΑΝΩ ΠΟΛΗ, 40ΕΚΚΛΗΣΙΕΣ, ΤΡΙΑΝΔΡΙΑ",
         [
@@ -675,10 +552,6 @@ if uploaded_files:
     )
 
 
-    # --------------------------------------------------------
-    # ROUTE 3
-    # --------------------------------------------------------
-
     add(
         "ΠΥΛΑΙΑ, ΠΑΝΟΡΑΜΑ, ΘΕΡΜΗ",
         [
@@ -689,10 +562,6 @@ if uploaded_files:
         ]
     )
 
-
-    # --------------------------------------------------------
-    # ROUTE 4
-    # --------------------------------------------------------
 
     add(
         "ΕΥΟΣΜΟΣ, ΣΤΑΥΡΟΥΠΟΛΗ, ΣΥΚΙΕΣ, ΝΕΑΠΟΛΗ, "
@@ -717,10 +586,6 @@ if uploaded_files:
     )
 
 
-    # --------------------------------------------------------
-    # ROUTE 5
-    # --------------------------------------------------------
-
     add(
         "ΓΙΑΝΝΙΤΣΩΝ, ΑΜΠΕΛΟΚΗΠΟΙ, ΜΕΝΕΜΕΝΗ",
         [
@@ -733,10 +598,6 @@ if uploaded_files:
     )
 
 
-    # --------------------------------------------------------
-    # ROUTE 6
-    # --------------------------------------------------------
-
     add(
         "ΚΟΡΔΕΛΙΟ, ΚΑΛΟΧΩΡΙ",
         [
@@ -745,10 +606,6 @@ if uploaded_files:
         ]
     )
 
-
-    # --------------------------------------------------------
-    # ROUTE 7
-    # --------------------------------------------------------
 
     add(
         "ΣΙΝΔΟΣ, ΙΩΝΙΑ, ΔΙΑΒΑΤΑ",
@@ -761,10 +618,6 @@ if uploaded_files:
     )
 
 
-    # --------------------------------------------------------
-    # ROUTE 8
-    # --------------------------------------------------------
-
     add(
         "ΧΩΡΙΑ, ΕΥΚΑΡΠΙΑ",
         [
@@ -775,22 +628,12 @@ if uploaded_files:
     )
 
 
-    # ========================================================
-    # ASSIGN ROUTE TO EACH UNIQUE STOP
-    # ========================================================
-
     unique_stops["Route"] = (
-        unique_stops[
-            "Postal_Group"
-        ]
+        unique_stops["Postal_Group"]
         .map(route_map)
         .fillna("ΛΟΙΠΑ")
     )
 
-
-    # ========================================================
-    # ROUTES SUMMARY
-    # ========================================================
 
     routes_summary = (
         unique_stops
@@ -813,11 +656,9 @@ if uploaded_files:
         "📥 Export Excel Report"
     )
 
-
     total_stops = (
         unique_stops.shape[0]
     )
-
 
     total_shipments = (
         df.shape[0]
@@ -830,11 +671,11 @@ if uploaded_files:
     with pd.ExcelWriter(
         output,
         engine="openpyxl"
-    ):
+    ) as writer:
 
-        # ====================================================
+        # --------------------------------------------
         # GROUP DELIVERIES
-        # ====================================================
+        # --------------------------------------------
 
         over5.to_excel(
             writer,
@@ -847,28 +688,20 @@ if uploaded_files:
             "Group Deliveries"
         ]
 
-
         worksheet.cell(
             row=1,
             column=1
-        ).value = (
-            "Συνολικές Αποστολές"
-        )
-
+        ).value = "Συνολικές Αποστολές"
 
         worksheet.cell(
             row=1,
             column=2
         ).value = total_shipments
 
-
         worksheet.cell(
             row=2,
             column=1
-        ).value = (
-            "Μοναδικές Στάσεις"
-        )
-
+        ).value = "Μοναδικές Στάσεις"
 
         worksheet.cell(
             row=2,
@@ -876,9 +709,9 @@ if uploaded_files:
         ).value = total_stops
 
 
-        # ====================================================
+        # --------------------------------------------
         # STOPS PER TK
-        # ====================================================
+        # --------------------------------------------
 
         postal_summary.to_excel(
             writer,
@@ -887,9 +720,9 @@ if uploaded_files:
         )
 
 
-        # ====================================================
+        # --------------------------------------------
         # ROUTES
-        # ====================================================
+        # --------------------------------------------
 
         routes_summary.to_excel(
             writer,
@@ -897,10 +730,6 @@ if uploaded_files:
             index=False
         )
 
-
-    # ========================================================
-    # GET EXCEL DATA
-    # ========================================================
 
     excel_data = output.getvalue()
 
@@ -913,14 +742,13 @@ if uploaded_files:
         "%d-%m-%Y"
     )
 
-
     filename = (
         f"delivery_report_{today}.xlsx"
     )
 
 
     # ========================================================
-    # DOWNLOAD BUTTON
+    # DOWNLOAD
     # ========================================================
 
     st.download_button(
