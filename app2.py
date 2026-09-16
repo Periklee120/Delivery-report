@@ -805,36 +805,27 @@ if uploaded_files:
     )
 
 
-    # ========================================================
-    # EXPORT EXCEL REPORT
-    # ========================================================
+    # =====================================
+# EXPORT EXCEL REPORT
+# =====================================
 
-    st.header(
-        "📥 Export Excel Report"
-    )
+st.header("📥 Export Excel Report")
 
+total_stops = unique_stops.shape[0]
+total_shipments = df.shape[0]
 
-    total_stops = (
-        unique_stops.shape[0]
-    )
-
-
-    total_shipments = (
-        df.shape[0]
-    )
-
+try:
 
     output = BytesIO()
-
 
     with pd.ExcelWriter(
         output,
         engine="openpyxl"
-    ):
+    ) as writer:
 
-        # ====================================================
-        # GROUP DELIVERIES
-        # ====================================================
+        # -----------------------------
+        # Group Deliveries
+        # -----------------------------
 
         over5.to_excel(
             writer,
@@ -843,41 +834,31 @@ if uploaded_files:
             startrow=4
         )
 
-        worksheet = writer.sheets[
-            "Group Deliveries"
-        ]
-
+        worksheet = writer.sheets["Group Deliveries"]
 
         worksheet.cell(
             row=1,
             column=1
-        ).value = (
-            "Συνολικές Αποστολές"
-        )
+        ).value = "Συνολικές Αποστολές"
 
         worksheet.cell(
             row=1,
             column=2
         ).value = total_shipments
 
-
         worksheet.cell(
             row=2,
             column=1
-        ).value = (
-            "Μοναδικές Στάσεις"
-        )
-
+        ).value = "Μοναδικές Στάσεις"
 
         worksheet.cell(
             row=2,
             column=2
         ).value = total_stops
 
-
-        # ====================================================
-        # STOPS PER TK
-        # ====================================================
+        # -----------------------------
+        # Stops per TK
+        # -----------------------------
 
         postal_summary.to_excel(
             writer,
@@ -885,10 +866,9 @@ if uploaded_files:
             index=False
         )
 
-
-        # ====================================================
-        # ROUTES
-        # ====================================================
+        # -----------------------------
+        # Routes
+        # -----------------------------
 
         routes_summary.to_excel(
             writer,
@@ -896,50 +876,26 @@ if uploaded_files:
             index=False
         )
 
-
-    # ========================================================
-    # GET EXCEL DATA
-    # ========================================================
+    # Πολύ σημαντικό:
+    # επιστρέφουμε στην αρχή του αρχείου
+    output.seek(0)
 
     excel_data = output.getvalue()
 
+    today = datetime.now().strftime("%d-%m-%Y")
 
-    # ========================================================
-    # FILE NAME WITH DATE
-    # ========================================================
-
-    today = datetime.now().strftime(
-        "%d-%m-%Y"
-    )
-
-
-    filename = (
-        f"delivery_report_{today}.xlsx"
-    )
-
-
-    # ========================================================
-    # DOWNLOAD BUTTON
-    # ========================================================
+    filename = f"delivery_report_{today}.xlsx"
 
     st.download_button(
         label="📥 Κατέβασε Excel Report",
         data=excel_data,
         file_name=filename,
-        mime=(
-            "application/"
-            "vnd.openxmlformats-officedocument."
-            "spreadsheetml.sheet"
-        )
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        key="download_excel_report"
     )
 
+except Exception as e:
 
-# ============================================================
-# NO FILE UPLOADED
-# ============================================================
+    st.error("❌ Παρουσιάστηκε πρόβλημα κατά τη δημιουργία του Excel.")
 
-else:
-
-    st.info(
-        "⬆ Ανέβασε Excel αρχεία για να ξεκινήσει το report."
-    )
+    st.exception(e)
