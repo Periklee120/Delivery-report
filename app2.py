@@ -855,7 +855,6 @@ if uploaded_files:
             "Συνολικές Αποστολές"
         )
 
-
         worksheet.cell(
             row=1,
             column=2
